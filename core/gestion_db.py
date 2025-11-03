@@ -4,7 +4,14 @@ import threading
 import os
 import hashlib
 
-DB_PATH = os.path.join("data", "identifier.sqlite")
+import os
+
+# Base directory of the project (go one level up from /core)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Construct absolute path to /data/identifier.sqlite
+DB_PATH = os.path.join(BASE_DIR, "data", "identifier.sqlite")
+
 
 
 _db_lock = threading.Lock()
@@ -179,6 +186,25 @@ def remove_suspect(path):
     """Supprime un suspect résolu"""
     execute_write("DELETE FROM suspects WHERE path=?", (path,))
 
+
+
+def get_suspects_map():
+    """Retourne {path: last_hash} depuis la table suspects."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT path, last_hash FROM suspects")
+    data = {row[0]: row[1] for row in cur.fetchall()}
+    conn.close()
+    return data
+
+def is_suspect(path):
+    """Return True if a file is already flagged as suspect."""
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM suspects WHERE path=? AND resolved=0", (path,))
+        return cur.fetchone() is not None
+
+
 def get_all_suspects():
     """Retourne tous les fichiers suspects"""
     return execute_fetchall("SELECT path, state, last_seen FROM suspects WHERE resolved=0")
@@ -230,3 +256,5 @@ def get_user_by_email(email):
 def get_baseline_dict():
     """Alias pour compatibilité"""
     return get_baseline()
+
+

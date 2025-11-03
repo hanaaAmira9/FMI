@@ -1,5 +1,6 @@
 # main.py
-from core.integrity_monitoring import init_db, build_baseline_for_folder, check_integrity, start_monitoring, stop_monitoring
+from core.integrity_monitoring import *
+from ui.gui_login import *
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QListWidget, QFileDialog, QPushButton, QMessageBox
 from PyQt6.QtCore import QTimer
@@ -30,7 +31,7 @@ def main():
 
     def refresh_list():
         list_widget.clear()
-        ok, mod, sup, file_status = check_integrity()
+        ok, mod, sup, file_status, _ = check_integrity()
         stats_label.setText(f"✅ OK: {ok} | ⚠️ Modifié: {mod} | ❌ Supprimé: {sup}")
         for path, state in file_status:
             list_widget.addItem(f"{state}  →  {path}")
@@ -55,4 +56,17 @@ def main():
     sys.exit(app.exec())
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    try:
+        window = ModernWindow()
+        window.show()
+        sys.exit(app.exec())
+    except Exception as e:
+        # Affiche une boîte de dialogue en cas d'erreur critique
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Critical)
+        msg.setWindowTitle("Erreur critique")
+        msg.setText("Une erreur inattendue est survenue !")
+        msg.setInformativeText(str(e))
+        msg.exec()
+        print("Erreur critique:", e)
