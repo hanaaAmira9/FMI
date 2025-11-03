@@ -1,449 +1,460 @@
+#add home = MainPage(username=logged_user_name)
+
+
+
+
 import sys
-from PyQt6.QtGui import QFont, QPixmap, QFontDatabase
 from PyQt6.QtWidgets import *
+from PyQt6.QtGui import QFont, QPixmap, QAction
 from PyQt6.QtCore import Qt
-from ui.gui import MainPage
+# sys.path.append(r'C:\Users\DELL\PycharmProjects\FMI\ui')
+from ui.gui_home import MainPage
+from core.email_sender import generate_code, send_code_confirmation_email, send_confirmation_email
+from core.user_manager import hash_password, register_user, verify_login, reset_password, load_users
 
 
+# =========================
+# FENÊTRE PRINCIPALE
+# =========================
 class ModernWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("File integrity monitor")
-        self.setGeometry(200, 50, 1000, 750)
+        self.setWindowTitle("File Integrity Monitor")
+        self.setGeometry(100, 100, 400, 400)
         self.is_dark_theme = False
-        self.current_content = None  # Pour stocker le contenu actuel
+        self.current_content = None
 
-        font_id = QFontDatabase.addApplicationFont("poppins/Poppins-SemiBold.ttf")
-        if font_id != -1:
-            families = QFontDatabase.applicationFontFamilies(font_id)
-            self.poppins_family = families[0] if families else None
-        else:
-            self.poppins_family = None
-
-        # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-
-        self.layout = QVBoxLayout(central_widget)  # ✅ Stocker la référence
+        self.layout = QVBoxLayout(central_widget)
         self.layout.setSpacing(0)
 
-        # Header
-        header = self.create_header()
-        self.layout.addWidget(header)
+        self.container = QWidget()
+        self.container_layout = QHBoxLayout(self.container)
+        self.container_layout.setContentsMargins(0, 0, 0, 0)
+        self.container_layout.setSpacing(0)
+        self.layout.addWidget(self.container, 1)
 
-        # Contenu initial
         self.showPage("login")
-
         self.apply_light_theme()
 
-    def showPage(self, pageName):
-        """Met à jour le contenu en fonction du nom de la page"""
-        # Supprime l'ancien contenu s'il existe
-        if self.current_content:
-            self.layout.removeWidget(self.current_content)
-            self.current_content.deleteLater()
-            self.current_content = None
+    # =========================
+    # CHANGEMENT DE PAGE
+    # =========================
+    def showPage(self, page):
+        while self.container_layout.count():
+            child = self.container_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
-        match pageName:
-            case "login":
-                self.current_content = self.create_login_content()
-            case "signup":
-                self.current_content = self.create_signup_content()
-            case "home":
-                self.current_content = self.create_home_content()  # ✅ Créer cette méthode
-            case "main":
-                self.open_main_page()  # ✅ Ouvrir MainPage
-                return  # ✅ Important : return pour ne pas ajouter de contenu
-            case _:
-                print(f"Page inconnue: {pageName}")
-                return
+        if page == "login":
+            form = self.create_login_content()
+            image = self.create_image_widget("img/sign.png", right=True)
+            self.container_layout.addWidget(form)
+            self.container_layout.addWidget(image)
+        elif page == "signup":
+            image = self.create_image_widget("img/sign.png", right=False)
+            form = self.create_signup_content()
+            self.container_layout.addWidget(image)
+            self.container_layout.addWidget(form)
+        elif page == "forgot":
+            form = self.create_forget_content()
+            image = self.create_image_widget("img/sign.png", right=True)
+            self.container_layout.addWidget(form)
+            self.container_layout.addWidget(image)
 
-        # Ajoute le nouveau contenu seulement si ce n'est pas "main"
-        if pageName != "main":
-            self.layout.addWidget(self.current_content, 1)
+        elif page == "new_password":
+            form = self.create_new_password_content()
+            image = self.create_image_widget("img/sign.png", right=False)
+            self.container_layout.addWidget(image)
+            self.container_layout.addWidget(form)
 
 
-    def create_header(self):
-        """Crée le header avec icône, titre et bouton theme"""
-        header = QWidget()
-        header.setFixedHeight(80)
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(20, 10, 20, 10)
+        elif page == "main":
+            self.open_main_page()
+            return
 
-        left_widget = QWidget()
-        left_layout = QHBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+    # =========================
+    # IMAGE WIDGET
+    # =========================
+    def create_image_widget(self, path, right=True):
+        label = QLabel()
+        pixmap = QPixmap(path)
+        pixmap = pixmap.scaled(500, 600, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                               Qt.TransformationMode.SmoothTransformation)
+        label.setPixmap(pixmap)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("background-color: #000000;" if right else "background-color: #000000;")
+        return label
 
-        self.icon_label = QLabel()
-        pixmap = QPixmap("database-security.png").scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
-                                                         Qt.TransformationMode.SmoothTransformation)
-        self.icon_label.setPixmap(pixmap)
+    def toggle_password_visibility(self):
+        """Afficher ou cacher le mot de passe du login."""
+        if self.password_login.echoMode() == QLineEdit.EchoMode.Password:
+            self.password_login.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.toggle_pwd_btn.setText("👁️")  # œil barré
+        else:
+            self.password_login.setEchoMode(QLineEdit.EchoMode.Password)
+            self.toggle_pwd_btn.setText("👁️")  # œil ouvert
 
-        self.title_label = QLabel("File integrity monitor")
-        self.title_label.setObjectName("headerTitle")
-
-        left_layout.addWidget(self.icon_label)
-        left_layout.addWidget(self.title_label)
-
-        # Right section: theme button
-        self.theme_pixmap = QPixmap("moon.png").scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
-                                                       Qt.TransformationMode.SmoothTransformation)
-        self.theme_label = QLabel()
-        self.theme_label.setPixmap(self.theme_pixmap)
+    # =========================
+    # LOGIN
+    # =========================
+    def create_login_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(80, 60, 80, 60)
+        layout.setSpacing(15)
+        self.theme_label = QLabel("☀️")
+        self.theme_label.setFont(QFont("Segoe UI", 20))
         self.theme_label.setCursor(Qt.CursorShape.PointingHandCursor)
         self.theme_label.mousePressEvent = self.toggle_theme
+        layout.addWidget(self.theme_label)
 
-        header_layout.addWidget(left_widget)
-        header_layout.addStretch()
-        header_layout.addWidget(self.theme_label)
-
-        return header
-
-    def create_login_content(self):
-        """Crée le contenu pour le login"""
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(0)
-
-        form_container = QWidget()
-        form_container.setFixedSize(400, 400)
-        form_layout = QVBoxLayout(form_container)
-        form_layout.setSpacing(10)
-        form_layout.setContentsMargins(40, 40, 40, 40)
-
-        login_title = QLabel("Login to your account")
-        login_title.setObjectName("loginTitle")
-        login_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        username_container = QWidget()
-        username_layout = QVBoxLayout(username_container)
-        username_layout.setContentsMargins(0, 0, 0, 0)
-
-        username_label = QLabel("Username")
-        username_label.setObjectName("fieldLabel")
+        title = QLabel("Welcome back")
+        subtitle = QLabel("Please enter your details")
+        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        subtitle.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(15)
 
         self.user_login = QLineEdit()
-        self.user_login.setPlaceholderText("Enter your username")
-        self.user_login.setFixedHeight(45)
-
-        username_layout.addWidget(username_label)
-        username_layout.addWidget(self.user_login)
-
-        password_container = QWidget()
-        password_layout = QVBoxLayout(password_container)
-        password_layout.setContentsMargins(0, 0, 0, 0)
-
-        password_label = QLabel("Password")
-        password_label.setObjectName("fieldLabel")
+        self.user_login.setPlaceholderText("Email address")
+        # ===== Champ mot de passe avec icône œil =====
+        pwd_container = QWidget()
+        pwd_layout = QHBoxLayout(pwd_container)
+        pwd_layout.setContentsMargins(0, 0, 0, 0)
+        pwd_layout.setSpacing(0)
 
         self.password_login = QLineEdit()
-        self.password_login.setPlaceholderText("Enter your password")
+        self.password_login.setPlaceholderText("Password")
         self.password_login.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_login.setFixedHeight(45)
+        self.password_login.setStyleSheet("border: none; padding: 8px; font-size: 15px;")
 
-        password_layout.addWidget(password_label)
-        password_layout.addWidget(self.password_login)
+        # 👁️ Bouton œil
+        self.toggle_pwd_btn = QPushButton("👁️")
+        self.toggle_pwd_btn.setFixedWidth(40)
+        self.toggle_pwd_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.toggle_pwd_btn.setStyleSheet("border: none; background: transparent; font-size: 16px;")
+        self.toggle_pwd_btn.clicked.connect(self.toggle_password_visibility)
 
-        buttons_container = QWidget()
-        buttons_layout = QHBoxLayout(buttons_container)
-        buttons_layout.setSpacing(15)
-        buttons_layout.setContentsMargins(0, 20, 0, 0)
+        pwd_layout.addWidget(self.password_login)
+        pwd_layout.addWidget(self.toggle_pwd_btn)
 
-        self.login_btn = QPushButton("Login")
-        self.login_btn.setFixedHeight(45)
-        self.login_btn.setObjectName("loginButton")
-        self.login_btn.clicked.connect(lambda: self.showPage("main"))  # ✅ Aller à MainPage
+        pwd_container.setStyleSheet("""
+            QWidget {
+                border: 1px solid  #2301C0 ;
+                 border-radius: 6px;
+            padding: 10px; font-size: 15px;  
+            }
+            QWidget:focus { border: 1px solid #2301C0; }
 
-        self.signup_btn = QPushButton("Sign Up")
-        self.signup_btn.setFixedHeight(45)
-        self.signup_btn.setObjectName("signupButton")
-        self.signup_btn.clicked.connect(lambda: self.showPage("signup"))
+        """)
 
-        buttons_layout.addWidget(self.login_btn)
-        buttons_layout.addWidget(self.signup_btn)
+        layout.addWidget(self.user_login)
+        layout.addWidget(pwd_container)
 
-        form_layout.addWidget(login_title)
-        form_layout.addWidget(username_container)
-        form_layout.addWidget(password_container)
-        form_layout.addStretch()
-        form_layout.addWidget(buttons_container)
+        forgot = QLabel("<a href='#'>Forgot password?</a>")
+        forgot.setTextFormat(Qt.TextFormat.RichText)
+        forgot.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        forgot.linkActivated.connect(lambda _: self.showPage("forgot"))
 
-        content_layout.addStretch()
-        content_layout.addWidget(form_container, 0, Qt.AlignmentFlag.AlignCenter)
-        content_layout.addStretch()
+        layout.addWidget(forgot, alignment=Qt.AlignmentFlag.AlignRight)
 
-        return content
+        signin_btn = QPushButton("Sign in")
+        signin_btn.setObjectName("blueButton")
+        signin_btn.clicked.connect(self.handle_login)
 
+        layout.addWidget(signin_btn)
+        layout.addSpacing(10)
+
+        footer = QLabel("Don’t have an account? <a href='#'>Sign up</a>")
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer.setTextFormat(Qt.TextFormat.RichText)
+        footer.linkActivated.connect(lambda _: self.showPage("signup"))
+        layout.addWidget(footer)
+
+        return widget
+
+    def create_forget_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(80, 60, 80, 60)
+        layout.setSpacing(15)
+
+        title = QLabel("Forgot Password?")
+        subtitle = QLabel("Enter your email to reset your password")
+        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        subtitle.setFont(QFont("Segoe UI", 11))
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(15)
+
+        self.forgot_email = QLineEdit()
+        self.forgot_email.setPlaceholderText("Email address")
+        layout.addWidget(self.forgot_email)
+
+        send_btn = QPushButton("Send Code")
+        send_btn.setObjectName("blueButton")
+        send_btn.clicked.connect(self.handle_forgot_password)
+        layout.addWidget(send_btn)
+
+        back = QLabel("<a href='#'>Back to login</a>")
+        back.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        back.setTextFormat(Qt.TextFormat.RichText)
+        back.linkActivated.connect(lambda _: self.showPage("login"))
+        layout.addWidget(back)
+
+        return widget
+
+    def change_password(self):
+        pwd = self.new_password_login.text()
+        confirm = self.new_password_confirm.text()
+
+        if not pwd or not confirm:
+            QMessageBox.warning(self, "Erreur", "Veuillez remplir les deux champs.")
+            return
+        if pwd != confirm:
+            QMessageBox.warning(self, "Erreur", "Les mots de passe ne correspondent pas.")
+            return
+
+        success, msg = reset_password(self.reset_email, pwd)
+        if success:
+            QMessageBox.information(self, "Succès", msg)
+            self.showPage("login")
+        else:
+            QMessageBox.warning(self, "Erreur", msg)
+
+    def create_new_password_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(80, 60, 80, 60)
+        layout.setSpacing(15)
+
+        title = QLabel("Reset Password")
+        subtitle = QLabel("Enter your new password")
+        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        subtitle.setFont(QFont("Segoe UI", 11))
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(15)
+
+        self.new_password_login = QLineEdit()
+        self.new_password_login.setPlaceholderText("New password")
+        self.new_password_login.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.new_password_confirm = QLineEdit()
+        self.new_password_confirm.setPlaceholderText("Confirm password")
+        self.new_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
+
+        layout.addWidget(self.new_password_login)
+        layout.addWidget(self.new_password_confirm)
+
+        change_btn = QPushButton("Change Password")
+        change_btn.setObjectName("blueButton")
+        change_btn.clicked.connect(self.change_password)
+        layout.addWidget(change_btn)
+
+        return widget
+
+    # =========================
+    # SIGNUP
+    # =========================
     def create_signup_content(self):
-        """Crée le contenu pour l'inscription"""
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(0)
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(80, 60, 80, 60)
+        layout.setSpacing(15)
 
-        form_container = QWidget()
-        form_container.setFixedSize(400, 600)
-        form_layout = QVBoxLayout(form_container)
-        form_layout.setSpacing(10)
-        form_layout.setContentsMargins(40, 40, 40, 40)
+        self.theme_label = QLabel("☀️")
+        self.theme_label.setFont(QFont("Segoe UI", 20))
+        self.theme_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.theme_label.mousePressEvent = self.toggle_theme
+        layout.addWidget(self.theme_label)
 
-        signup_title = QLabel("Create Account")
-        signup_title.setObjectName("loginTitle")
-        signup_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title = QLabel("Create an account")
+        subtitle = QLabel("Please fill in your details")
+        title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
+        subtitle.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(25)
 
-        username_label = QLabel("Username")
-        username_label.setObjectName("fieldLabel")
         self.user_signup = QLineEdit()
-        self.user_signup.setPlaceholderText("Enter your username")
-        self.user_signup.setFixedHeight(45)
-
-        email_label = QLabel("Email")
-        email_label.setObjectName("fieldLabel")
+        self.user_signup.setPlaceholderText("Username")
         self.mail_signup = QLineEdit()
-        self.mail_signup.setPlaceholderText("Enter your email")
-        self.mail_signup.setFixedHeight(45)
-
-        password_label = QLabel("Password")
-        password_label.setObjectName("fieldLabel")
+        self.mail_signup.setPlaceholderText("Email address")
         self.password_signup = QLineEdit()
-        self.password_signup.setPlaceholderText("Enter your password")
+        self.password_signup.setPlaceholderText("Password")
         self.password_signup.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_signup.setFixedHeight(45)
-
-        confirm_label = QLabel("Confirm Password")
-        confirm_label.setObjectName("fieldLabel")
         self.password_confirm = QLineEdit()
-        self.password_confirm.setPlaceholderText("Confirm your password")
+        self.password_confirm.setPlaceholderText("Confirm password")
         self.password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_confirm.setFixedHeight(45)
 
-        buttons_container = QWidget()
-        buttons_layout = QHBoxLayout(buttons_container)
-        buttons_layout.setSpacing(15)
-        buttons_layout.setContentsMargins(0, 20, 0, 0)
+        layout.addWidget(self.user_signup)
+        layout.addWidget(self.mail_signup)
+        layout.addWidget(self.password_signup)
+        layout.addWidget(self.password_confirm)
 
-        self.return_btn = QPushButton("Back to Login")
-        self.return_btn.setFixedHeight(45)
-        self.return_btn.setObjectName("signupButton")
-        self.return_btn.clicked.connect(lambda: self.showPage("login"))
+        signup_btn = QPushButton("Sign up")
+        signup_btn.setObjectName("blueButton")
+        signup_btn.clicked.connect(self.handle_signup)
+        layout.addWidget(signup_btn)
 
-        self.create_account_btn = QPushButton("Create Account")
-        self.create_account_btn.setFixedHeight(45)
-        self.create_account_btn.setObjectName("loginButton")
-        self.create_account_btn.clicked.connect(lambda: self.showPage("main"))  # ✅ Aller à MainPage
+        footer = QLabel("Already have an account? <a href='#'>Sign in</a>")
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer.setTextFormat(Qt.TextFormat.RichText)
+        footer.linkActivated.connect(lambda _: self.showPage("login"))
+        layout.addWidget(footer)
 
-        buttons_layout.addWidget(self.return_btn)
-        buttons_layout.addWidget(self.create_account_btn)
+        return widget
 
-        form_layout.addWidget(signup_title)
-        form_layout.addWidget(username_label)
-        form_layout.addWidget(self.user_signup)
-        form_layout.addWidget(email_label)
-        form_layout.addWidget(self.mail_signup)
-        form_layout.addWidget(password_label)
-        form_layout.addWidget(self.password_signup)
-        form_layout.addWidget(confirm_label)
-        form_layout.addWidget(self.password_confirm)
-        form_layout.addStretch()
-        form_layout.addWidget(buttons_container)
+    # =========================
+    # GESTION SIGNUP
+    # =========================
+    def handle_signup(self):
+        username = self.user_signup.text().strip()
+        email = self.mail_signup.text().strip()
+        pwd = self.password_signup.text()
+        confirm = self.password_confirm.text()
 
-        content_layout.addStretch()
-        content_layout.addWidget(form_container, 0, Qt.AlignmentFlag.AlignCenter)
-        content_layout.addStretch()
+        if not username or not email or not pwd or not confirm:
+            QMessageBox.warning(self, "Erreur", "Tous les champs sont obligatoires.")
+            return
+        if pwd != confirm:
+            QMessageBox.warning(self, "Erreur", "Les mots de passe ne correspondent pas.")
+            return
 
-        return content
+        code = generate_code()
+        success = send_code_confirmation_email(email, username, code)
+        if not success:
+            QMessageBox.critical(self, "Erreur", "Impossible d’envoyer l’e-mail. Vérifie ta connexion.")
+            return
 
-    def create_home_content(self):
-        """Crée une page home simple (optionnel)"""
-        content = QWidget()
-        layout = QVBoxLayout(content)
+        user_code, ok = QInputDialog.getText(self, "Confirmation", f"Un code a été envoyé à {email}. Entrez-le ici :")
+        if ok:
+            if user_code.strip() == code:
 
-        label = QLabel("Welcome Home!")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
+                password_hash = hash_password(pwd)
+                saved = register_user(username, email, password_hash)
 
-        back_btn = QPushButton("Back to Login")
-        back_btn.clicked.connect(lambda: self.showPage("login"))
-        layout.addWidget(back_btn)
+                if not saved:
+                    QMessageBox.warning(self, "Erreur", "Un compte existe déjà avec cet e-mail.")
+                    return
 
-        return content
+                # ✅ Envoi de mail de bienvenue (optionnel)
+                send_confirmation_email(email, username)
+
+                QMessageBox.information(self, "Succès", "✅ Compte créé avec succès !")
+                self.showPage("login")
+
+            else:
+                QMessageBox.critical(self, "Erreur", "Code incorrect.")
+
+    def handle_login(self):
+        email = self.user_login.text().strip()
+        password = self.password_login.text()
+
+        if not email or not password:
+            QMessageBox.warning(self, "Erreur", "Veuillez remplir tous les champs.")
+            return
+
+        success, message = verify_login(email, password)
+
+        if success:
+            QMessageBox.information(self, "Connexion réussie", message)
+            self.showPage("main")
+        else:
+            QMessageBox.critical(self, "Erreur", message)
+
+    def handle_forgot_password(self):
+        email = self.forgot_email.text().strip()
+        users = load_users()
+
+        if not email:
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer votre adresse e-mail.")
+            return
+        if email not in users:
+            QMessageBox.warning(self, "Erreur", "Aucun compte trouvé avec cet e-mail.")
+            return
+
+        # Génération du code
+        code = generate_code()
+        sent = send_code_confirmation_email(email, users[email]["username"], code)
+        if not sent:
+            QMessageBox.critical(self, "Erreur", "Impossible d’envoyer le code. Vérifie ta connexion.")
+            return
+
+        # Demander le code à l’utilisateur
+        user_code, ok = QInputDialog.getText(self, "Vérification", f"Un code a été envoyé à {email}. Entrez-le ici :")
+        if not ok or user_code.strip() != code:
+            QMessageBox.critical(self, "Erreur", "❌ Code incorrect.")
+            return
+
+        # Si code valide → afficher page de changement de mot de passe
+        self.reset_email = email  # sauvegarde pour la suite
+        self.showPage("new_password")
+
+    """def open_main_page(self):
+        self.main_page = MainPage(self.is_dark_theme)
+        self.setCentralWidget(self.main_page)"""
 
     def open_main_page(self):
-        """Ouvre la MainPage"""
-        self.main_page = MainPage(self.is_dark_theme, self.styleSheet())
-        self.setCentralWidget(self.main_page)
+        """Load the main dashboard inside the same window without resizing."""
+        self.container.hide()  # Hide login/signup container
+        self.main_page = MainPage(self.is_dark_theme)
+        self.layout.addWidget(self.main_page)
 
+    # =========================
+    # THEMES
+    # =========================
     def toggle_theme(self, event):
         self.is_dark_theme = not self.is_dark_theme
-
         if self.is_dark_theme:
             self.apply_dark_theme()
-            sun_pixmap = QPixmap("sun.png").scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
-                                                   Qt.TransformationMode.SmoothTransformation)
-            self.theme_label.setPixmap(sun_pixmap)
+            self.theme_label.setText("🌙")
         else:
             self.apply_light_theme()
-            self.theme_label.setPixmap(self.theme_pixmap)
-
-        # Mettre à jour le style de la main page si elle existe
-        if hasattr(self, 'main_page'):
-            self.main_page.current_style = self.styleSheet()
-            self.main_page.is_dark_theme = self.is_dark_theme
-            self.main_page.apply_styles()  # ✅ Appliquer les nouveaux styles
+            self.theme_label.setText("☀️")
 
     def apply_light_theme(self):
-        """Applique le thème clair"""
-        style = """
-        QMainWindow {
-            background-color: #ffffff;
-        }
-        QLabel#headerTitle {
-            color: #6A5FF5;
-            font-size: 40px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        QLabel#loginTitle {
-            color: #2D3748;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-        QLabel#fieldLabel {
-            color: #4A5568;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+        self.setStyleSheet("""
+        QMainWindow { background: white; }
+
         QLineEdit {
-            background-color: #FFFFFF;
-            border: 2px solid #E2E8F0;
-            border-radius: 8px;
-            padding: 12px 15px;
-            color: #2D3748;
-            font-size: 14px;
-            selection-background-color: #6A5FF5;
+            border: 1px solid #ccc; border-radius: 6px;
+            padding: 10px; font-size: 15px;
         }
-        QLineEdit:focus {
-            border-color: #6A5FF5;
-            background-color: #FFFFFF;
+        QLineEdit:focus { border: 1px solid #2301C0; }
+        QPushButton#blueButton {
+            background-color: #2301C0;
+            color: white; border-radius: 8px;
+            padding: 12px; font-size: 15px; font-weight: bold;
         }
-        QLineEdit::placeholder {
-            color: #A0AEC0;
-            font-style: italic;
-            font-size: 13px;
+        QPushButton#blueButton:hover {
+            background-color: #120A37;
         }
-        QPushButton#loginButton {
-            background-color: #6A5FF5;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        QPushButton#loginButton:hover {
-            background-color: #5A4FDF;
-        }
-        QPushButton#loginButton:pressed {
-            background-color: #4A3FCF;
-        }
-        QPushButton#signupButton {
-            background-color: #FFFFFF;
-            color: #6A5FF5;
-            border: 2px solid #6A5FF5;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        QPushButton#signupButton:hover {
-            background-color: #F7FAFC;
-            border-color: #5A4FDF;
-        }
-        QPushButton#signupButton:pressed {
-            background-color: #EDF2F7;
-        }
-        """
-        self.setStyleSheet(style)
+        QLabel a { color: #2301C0; text-decoration: none; }
+        QLabel a:hover { text-decoration: underline; }
+        """)
 
     def apply_dark_theme(self):
-        """Applique le thème sombre"""
-        style = """
-        QMainWindow {
-            background-color: #1A202C;
-        }
-        QLabel#headerTitle {
-            color: #9F7AEA;
-            font-size: 40px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        QLabel#loginTitle {
-            color: #F7FAFC;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-        QLabel#fieldLabel {
-            color: #E2E8F0;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+        self.setStyleSheet("""
+        QMainWindow { background: #1e1e1e; }
+        QLabel { color: white; }
         QLineEdit {
-            background-color: #2D3748;
-            border: 2px solid #4A5568;
-            border-radius: 8px;
-            padding: 12px 15px;
-            color: #F7FAFC;
-            font-size: 14px;
-            selection-background-color: #9F7AEA;
+            background: #2d2d2d; color: white;
+            border: 1px solid #555; border-radius: 6px;
+            padding: 8px;
         }
-        QLineEdit:focus {
-            border-color: #9F7AEA;
-            background-color: #2D3748;
+         QLineEdit:focus { border: 1px solid #2301C0; }
+        QPushButton#blueButton {
+            background-color: #2301C0;
+            color: black; border-radius: 8px;
+            padding: 12px; font-weight: bold;
         }
-        QLineEdit::placeholder {
-            color: #718096;
-            font-style: italic;
-            font-size: 13px;
+        QPushButton#blueButton:hover {
+            background-color: #120A37;
         }
-        QPushButton#loginButton {
-            background-color: #9F7AEA;
-            color: #1A202C;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        QPushButton#loginButton:hover {
-            background-color: #B794F4;
-        }
-        QPushButton#loginButton:pressed {
-            background-color: #805AD5;
-        }
-        QPushButton#signupButton {
-            background-color: transparent;
-            color: #9F7AEA;
-            border: 2px solid #9F7AEA;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        QPushButton#signupButton:hover {
-            background-color: rgba(159, 122, 234, 0.1);
-            border-color: #B794F4;
-        }
-        QPushButton#signupButton:pressed {
-            background-color: rgba(159, 122, 234, 0.2);
-        }
-        """
-        self.setStyleSheet(style)
+        """)
 
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setFont(QFont("Segoe UI", 10))
-
-    window = ModernWindow()
-    window.show()
-
-    sys.exit(app.exec())
