@@ -10,7 +10,7 @@ CURRENT_USER_FILE = os.path.join(BASE_DIR, "userCurrent.json")
 USER_ACTUEL = ""
 
 
-# ========= 🔹 Fonctions utilitaires =========
+
 def hash_password(password: str) -> str:
     """Retourne le hash SHA256 du mot de passe."""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -51,7 +51,7 @@ def register_user(username, email, password):
     users = load_users()
 
     if email in users:
-        return False, "❌ Cet email est déjà enregistré."
+        return False, "Cet email est déjà enregistré."
 
     users[email] = {
         "username": username,
@@ -60,7 +60,7 @@ def register_user(username, email, password):
 
     save_users(users)
     send_confirmation_email(email, username)
-    return True, "✅ Compte créé avec succès !"
+    return True, "Compte créé avec succès !"
 
 
 def verify_login(email, password):
@@ -70,15 +70,15 @@ def verify_login(email, password):
     users = load_users()
 
     if email not in users:
-        return False, "❌ Aucun compte trouvé avec cet email."
+        return False, "Aucun compte trouvé avec cet email."
 
     hashed_input = hash_password(password)
     if users[email]["password"] == hashed_input:
         USER_ACTUEL = users[email]['username']
         save_current_user(USER_ACTUEL)
-        return True, f"✅ Bienvenue {USER_ACTUEL} !"
+        return True, f"Bienvenue {USER_ACTUEL} !"
     else:
-        return False, "❌ Mot de passe incorrect."
+        return False, "Mot de passe incorrect."
 
 
 def reset_password(email, new_password):
@@ -86,13 +86,13 @@ def reset_password(email, new_password):
     users = load_users()
 
     if email not in users:
-        return False, "❌ Aucun compte trouvé avec cet email."
+        return False, "Aucun compte trouvé avec cet email."
 
     users[email]["password"] = hash_password(new_password)
     save_users(users)
 
     send_confirmation_email(email, users[email]["username"])
-    return True, "✅ Mot de passe réinitialisé avec succès !"
+    return True, "Mot de passe réinitialisé avec succès !"
 
 
 def list_users():
@@ -114,4 +114,3 @@ def list_users():
 
     return user_list
 
-list_users()
