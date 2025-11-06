@@ -69,6 +69,7 @@ def verify_login(email, password):
 
     users = load_users()
 
+
     if email not in users:
         return False, "Aucun compte trouvé avec cet email."
 
