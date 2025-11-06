@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 from ui.gui_home import MainPage
 from core.email_sender import generate_code, send_code_confirmation_email, send_confirmation_email
 from core.user_manager import hash_password, register_user, verify_login, reset_password, load_users
-
+from PyQt6.QtGui import QIcon
 
 # =========================
 # FENÊTRE PRINCIPALE
@@ -16,7 +16,8 @@ from core.user_manager import hash_password, register_user, verify_login, reset_
 class ModernWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("File Integrity Monitor")
+        self.setWindowTitle("FortiFile")
+        self.setWindowIcon(QIcon("img/icon.png"))
         self.setGeometry(100, 100, 400, 400)
         self.is_dark_theme = False
         self.current_content = None
