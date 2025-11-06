@@ -29,6 +29,9 @@
 [2025-11-02 19:07:50] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-02 19:08:00] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-02 19:08:10] [ALERTE] 1 modifiés, 1 supprimés
+[2025-11-06 16:35:45] [ALERTE] 0 modifiés, 56 supprimés
+[2025-11-06 16:35:56] [ALERTE] 0 modifiés, 56 supprimés
+[2025-11-06 16:36:06] [ALERTE] 0 modifiés, 56 supprimés
 [2025-11-03 08:44:29] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-03 08:44:39] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-03 08:44:49] [ALERTE] 1 modifiés, 1 supprimés
@@ -57,3 +60,15 @@
 [2025-11-03 08:53:08] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-03 08:53:18] [ALERTE] 1 modifiés, 1 supprimés
 [2025-11-03 13:39:41] Le  fichier : C:/Users/DELL/Desktop/test\test2.txt a ete modifiés.
+[2025-11-06T17:06:45.922470] init_db error: database disk image is malformed
+[2025-11-06T17:06:45.924465] Erreur ensure_baseline_columns: database disk image is malformed
+[2025-11-06T17:06:57.994905] init_db error: database disk image is malformed
+[2025-11-06T17:06:57.996810] Erreur ensure_baseline_columns: database disk image is malformed
+[2025-11-06T17:07:23.986444] init_db error: database disk image is malformed
+[2025-11-06T17:07:23.988480] Erreur ensure_baseline_columns: database disk image is malformed
+[2025-11-06T17:07:30.516244] init_db error: database disk image is malformed
+[2025-11-06T17:07:30.517239] Erreur ensure_baseline_columns: database disk image is malformed
+[2025-11-06T17:07:36.131220] init_db error: database disk image is malformed
+[2025-11-06T17:07:36.133545] Erreur ensure_baseline_columns: database disk image is malformed
+[2025-11-06T17:13:17.109053] init_db error: database disk image is malformed
+[2025-11-06T17:13:17.112008] Erreur ensure_baseline_columns: database disk image is malformed

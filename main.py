@@ -105,3 +105,6 @@ if __name__ == "__main__":
         msg.setInformativeText(str(e))
         msg.exec()
         print("Erreur critique:", e)
+
+
+
