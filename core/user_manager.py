@@ -114,4 +114,3 @@ def list_users():
 
     return user_list
 
-list_users()
