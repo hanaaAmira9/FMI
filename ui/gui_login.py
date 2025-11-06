@@ -1,6 +1,3 @@
-#add home = MainPage(username=logged_user_name)
-
-
 
 
 import sys

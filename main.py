@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QGuiApplication, QFont
-
+from PyQt6.QtGui import QIcon
 from core.integrity_monitoring import *
 from ui.gui_login import ModernWindow
 
@@ -28,7 +28,8 @@ def main_window():
     """Main FIM window with folder monitoring."""
     init_db()
     window = QWidget()
-    window.setWindowTitle("FIM - File Integrity Monitor")
+    window.setWindowTitle("FortiFile")
+    window.setWindowIcon(QIcon("img/iconApp.png"))
     window.resize(900, 600)
     center_window(window)
 
