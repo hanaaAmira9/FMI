@@ -17,7 +17,7 @@ class ModernWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("FortiFile")
-        self.setWindowIcon(QIcon("img/icon.png"))
+        self.setWindowIcon(QIcon("img/imageScann.jpeg"))
         self.setGeometry(100, 100, 400, 400)
         self.is_dark_theme = False
         self.current_content = None
