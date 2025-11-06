@@ -3,14 +3,14 @@ import os
 import hashlib
 from core.email_sender import send_confirmation_email  # ton module existant
 
-# === Constantes ===
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # dossier principal
 USERS_FILE = os.path.join(BASE_DIR, "users.json")
 CURRENT_USER_FILE = os.path.join(BASE_DIR, "userCurrent.json")
+
 USER_ACTUEL = ""
 
 
-# === Fonctions utilitaires ===
+# ========= 🔹 Fonctions utilitaires =========
 def hash_password(password: str) -> str:
     """Retourne le hash SHA256 du mot de passe."""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -31,7 +31,7 @@ def save_users(users):
 
 
 def save_current_user(username):
-    """Sauvegarde le user actuellement connecté dans user.json."""
+    """Sauvegarde le user actuellement connecté dans userCurrent.json."""
     with open(CURRENT_USER_FILE, "w", encoding="utf-8") as f:
         json.dump({"username": username}, f, indent=4)
 
@@ -45,45 +45,41 @@ def load_current_user():
     return USER_ACTUEL
 
 
-# === 🔸 Fonctions principales ===
-
+# ========= 🔸 Fonctions principales =========
 def register_user(username, email, password):
-    """Crée un nouvel utilisateur avec mot de passe hashé.
-    Vérifie l’unicité de l’email et du username.
-    """
+    """Crée un nouvel utilisateur avec mot de passe hashé."""
     users = load_users()
 
-    # Vérif email existant
-    if email in users:
-        return False, "Cet email est déjà enregistré."
-
-    # Vérif username déjà pris
-    for user_data in users.values():
-        if user_data["username"].lower() == username.lower():
-            return False, "Ce nom d'utilisateur est déjà pris."
-
-    # Enregistrement
     users[email] = {
         "username": username,
         "password": hash_password(password)
     }
-
     save_users(users)
-    send_confirmation_email(email, username)
+
     return True, "Compte créé avec succès !"
 
+def verifier_email(email):
+    users = load_users()
+    if email in users:
+        return False
+    return True
+
+def verifier_username(username):
+    users = load_users()
+    # Vérification unicité username
+    if any(data['username'] == username for data in users.values()):
+        return False
+    return True
 
 def verify_login(email, password):
     """Vérifie si l'utilisateur existe et si le mot de passe est correct."""
     global USER_ACTUEL
-
     users = load_users()
     if email not in users:
         return False, "Aucun compte trouvé avec cet email."
-
     hashed_input = hash_password(password)
     if users[email]["password"] == hashed_input:
-        USER_ACTUEL = users[email]["username"]
+        USER_ACTUEL = users[email]['username']
         save_current_user(USER_ACTUEL)
         return True, f"Bienvenue {USER_ACTUEL} !"
     else:
@@ -95,7 +91,6 @@ def reset_password(email, new_password):
     users = load_users()
     if email not in users:
         return False, "Aucun compte trouvé avec cet email."
-
     users[email]["password"] = hash_password(new_password)
     save_users(users)
     send_confirmation_email(email, users[email]["username"])
@@ -103,14 +98,14 @@ def reset_password(email, new_password):
 
 
 def list_users():
-    """Retourne la liste des utilisateurs et leurs rôles."""
+    """Affiche et retourne la liste des utilisateurs et leurs rôles."""
     users = load_users()
     if not users:
         return []
     current_user = load_current_user()
     user_list = []
     for email, data in users.items():
-        role = "Admin" if data["username"] == current_user else "User standard"
+        role = "Admin" if data['username'] == current_user else "User standard"
         user_list.append({
             "username": data["username"],
             "email": email,
@@ -120,50 +115,39 @@ def list_users():
 
 
 
-
-def change_username(email, new_username):
-    """Permet de changer le nom d'utilisateur associé à un email."""
+def change_username(old_username, new_username):
+    """Change le nom d'utilisateur."""
     users = load_users()
-    if email not in users:
-        return False, "Utilisateur non trouvé."
-
-    # Vérifier que le nouveau nom n'est pas déjà utilisé
-    for data in users.values():
-        if data["username"].lower() == new_username.lower():
-            return False, "Ce nom d'utilisateur est déjà pris."
-
-    users[email]["username"] = new_username
-    save_users(users)
-    send_confirmation_email(email, new_username)
-    return True, "Nom d'utilisateur changé avec succès."
-
-
-def change_email(old_email, new_email):
-    """Change l'email d’un utilisateur."""
-    users = load_users()
-
-    if old_email not in users:
-        return False, "Ancien email introuvable."
-    if new_email in users:
-        return False, "Le nouvel email est déjà enregistré."
-
-    users[new_email] = users.pop(old_email)
-    save_users(users)
-    send_confirmation_email(new_email, users[new_email]["username"])
-    return True, "Email modifié avec succès."
+    if any(data['username'] == new_username for data in users.values()):
+        return False, "Ce nom d'utilisateur est déjà utilisé."
+    for email, data in users.items():
+        if data['username'] == old_username:
+            data['username'] = new_username
+            save_users(users)
+            save_current_user(new_username)
+            return True, "Nom d'utilisateur mis à jour avec succès !"
+    return False, "Utilisateur non trouvé."
 
 
 def change_password(email, old_password, new_password):
-    """Change le mot de passe si l’ancien est correct."""
+    """Change le mot de passe si l'ancien est correct."""
     users = load_users()
-
     if email not in users:
-        return False, "Utilisateur non trouvé."
-
-    hashed_old = hash_password(old_password)
-    if users[email]["password"] != hashed_old:
+        return False, "Email non trouvé."
+    if users[email]["password"] != hash_password(old_password):
         return False, "Ancien mot de passe incorrect."
-
     users[email]["password"] = hash_password(new_password)
     save_users(users)
-    return True, "Mot de passe changé avec succès."
+    return True, "Mot de passe mis à jour avec succès !"
+
+
+def change_email(old_email, new_email):
+    """Change l'email si le nouveau n'existe pas déjà."""
+    users = load_users()
+    if old_email not in users:
+        return False, "Email actuel non trouvé."
+    if new_email in users:
+        return False, "Le nouvel email est déjà utilisé."
+    users[new_email] = users.pop(old_email)
+    save_users(users)
+    return True, "Email mis à jour avec succès !"

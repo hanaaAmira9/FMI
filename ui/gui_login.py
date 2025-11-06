@@ -7,7 +7,8 @@ from PyQt6.QtCore import Qt
 # sys.path.append(r'C:\Users\DELL\PycharmProjects\FMI\ui')
 from ui.gui_home import MainPage
 from core.email_sender import generate_code, send_code_confirmation_email, send_confirmation_email
-from core.user_manager import hash_password, register_user, verify_login, reset_password, load_users
+from core.user_manager import hash_password, register_user, verify_login, reset_password, load_users, verifier_email, \
+    verifier_username
 from PyQt6.QtGui import QIcon
 
 # =========================
@@ -322,8 +323,16 @@ class ModernWindow(QMainWindow):
         if pwd != confirm:
             QMessageBox.warning(self, "Erreur", "Les mots de passe ne correspondent pas.")
             return
+        if not  verifier_email(email ) :
+            QMessageBox.critical(self, "Erreur", "Un compte existe déjà avec cet e-mail.")
+            return
+        if not verifier_username(username) :
+            QMessageBox.critical(self, "Erreur", "Ce nom d'utilisateur est déjà utilisé.")
+            return
+
 
         code = generate_code()
+        print(code)
         success = send_code_confirmation_email(email, username, code)
         if not success:
             QMessageBox.critical(self, "Erreur", "Impossible d’envoyer l’e-mail. Vérifie ta connexion.")
