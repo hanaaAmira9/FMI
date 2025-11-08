@@ -8,6 +8,8 @@ from PyQt6.QtGui import QGuiApplication, QFont
 
 from core.integrity_monitoring import *
 from ui.gui_login import ModernWindow
+from ui.main_window import AppWindow
+
 
 
 def center_window(window):
@@ -93,7 +95,7 @@ def main_window():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     try:
-        principal_window = ModernWindow()
+        principal_window =  ModernWindow()
         principal_window.show()        # Show first
         center_window(principal_window)  # Then center
         sys.exit(app.exec())
@@ -105,6 +107,3 @@ if __name__ == "__main__":
         msg.setInformativeText(str(e))
         msg.exec()
         print("Erreur critique:", e)
-
-
-

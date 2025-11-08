@@ -7,6 +7,7 @@ from core.user_manager import hash_password, register_user, verify_login, reset_
     verifier_username
 from PyQt6.QtGui import QIcon
 
+
 # =========================
 # FENÊTRE PRINCIPALE
 # =========================
@@ -214,8 +215,6 @@ class ModernWindow(QMainWindow):
 
         return label
 
-
-
     # =========================
     # LOGIN
     # =========================
@@ -224,7 +223,6 @@ class ModernWindow(QMainWindow):
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(80, 60, 80, 60)
         layout.setSpacing(15)
-
 
         title = QLabel("Welcome back")
         subtitle = QLabel("Sign in to your account.")
@@ -242,10 +240,8 @@ class ModernWindow(QMainWindow):
         self.password_login.setPlaceholderText("Password")
         self.password_login.setEchoMode(QLineEdit.EchoMode.Password)
 
-
         layout.addWidget(self.user_login)
         layout.addWidget(self.password_login)
-
 
         forgot = QLabel("<a href='#' style='font-weight: bold;' >Forgot password?</a>")
         forgot.setTextFormat(Qt.TextFormat.RichText)
@@ -359,8 +355,6 @@ class ModernWindow(QMainWindow):
         layout.setContentsMargins(80, 60, 80, 60)
         layout.setSpacing(15)
 
-
-
         title = QLabel("Create an account")
         subtitle = QLabel("You can start classes as soon as you register.")
         title.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
@@ -408,19 +402,17 @@ class ModernWindow(QMainWindow):
         confirm = self.password_confirm.text()
 
         if not username or not email or not pwd or not confirm:
-
             QMessageBox.warning(self, "Erreur", "Tous les champs sont obligatoires.")
             return
         if pwd != confirm:
             QMessageBox.warning(self, "Erreur", "Les mots de passe ne correspondent pas.")
             return
-        if not  verifier_email(email ) :
+        if not verifier_email(email):
             QMessageBox.critical(self, "Erreur", "Un compte existe déjà avec cet e-mail.")
             return
-        if not verifier_username(username) :
+        if not verifier_username(username):
             QMessageBox.critical(self, "Erreur", "Ce nom d'utilisateur est déjà utilisé.")
             return
-
 
         code = generate_code()
         print(code)
@@ -514,7 +506,6 @@ class ModernWindow(QMainWindow):
         else:
             self.apply_light_theme()
 
-
     def apply_light_theme(self):
         self.setStyleSheet("""
         QMainWindow { background: white; }
@@ -565,10 +556,11 @@ class ModernWindow(QMainWindow):
         self.title_bar.btn_maximize.setIcon(QIcon("img/maximize.png"))
         self.title_bar.btn_close.setIcon(QIcon("img/close.png"))
         self.title_bar.btn_mode.setIcon(QIcon("img/light.png"))
+
     def apply_dark_theme(self):
         self.setStyleSheet("""
         QMainWindow { background: #1e1e1e; }
-      
+
         QLabel { color: white; }
         QLineEdit {
             background: #2d2d2d; color: white;
@@ -588,7 +580,7 @@ class ModernWindow(QMainWindow):
         self.container.setStyleSheet("""
                     QWidget#containerMain { background-color: #2c2c2e ; border-radius: 20px; }
                     QMainWindow { background: #1e1e1e; }
-      
+
         QLabel { color: white; }
         QLineEdit {
             background: #2d2d2d; color: white;
@@ -615,4 +607,3 @@ class ModernWindow(QMainWindow):
         self.title_bar.btn_maximize.setIcon(QIcon("img/maximizeDark.png"))
         self.title_bar.btn_close.setIcon(QIcon("img/closeDark.png"))
         self.title_bar.btn_mode.setIcon(QIcon("img/dark.png"))
-
