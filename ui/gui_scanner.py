@@ -4,10 +4,8 @@ from PyQt6.QtGui import QFont, QPixmap, QIcon, QColor , QAction
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
-from core.integrityCode import build_baseline_for_folder
+from integrityCode import  build_baseline_for_folder
 from core.config_manager import get_mode , update_mode
-
-
 
 class ScanPage(QWidget):
     def __init__(self, username="User"):

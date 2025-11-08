@@ -44,7 +44,44 @@ def load_current_user():
             return data.get("username", "")
     return USER_ACTUEL
 
+def edit_user(username, email,password, dateNaissance ):
+    """Crée un nouvel utilisateur avec mot de passe hashé."""
+    users = load_users()
 
+    users[email] = {
+        "username": username,
+        "password": hash_password(password),
+        "dateNaissance" : dateNaissance
+
+    }
+    save_users(users)
+    print('hh')
+    save_current_user(username)
+
+    return True
+
+def get_date_of_birth_by_username(username):
+    """
+    Retourne la date de naissance pour un username donné.
+    Si l'utilisateur n'existe pas ou n'a pas de date de naissance, retourne None.
+    """
+    users = load_users()
+    for email, data in users.items():
+        if data.get("username") == username:
+            return data.get("date_of_birth")  # Assure-toi que le champ existe dans users.json
+    return None
+
+
+def get_hashed_password_by_username(username):
+    """
+    Retourne le hash du mot de passe pour un username donné.
+    Si l'utilisateur n'existe pas, retourne None.
+    """
+    users = load_users()
+    for email, data in users.items():
+        if data.get("username") == username:
+            return data.get("password")
+    return None
 # ========= 🔸 Fonctions principales =========
 def register_user(username, email, password):
     """Crée un nouvel utilisateur avec mot de passe hashé."""
@@ -52,7 +89,8 @@ def register_user(username, email, password):
 
     users[email] = {
         "username": username,
-        "password": hash_password(password)
+        "password": hash_password(password),
+        "dateNaissance": ""
     }
     save_users(users)
 
@@ -104,6 +142,11 @@ def list_users():
         return []
     current_user = load_current_user()
     user_list = []
+    user_list.append({
+        "username": "Username",
+        "email": "Email",
+        "role": "Role"
+    })
     for email, data in users.items():
         role = "Admin" if data['username'] == current_user else "User standard"
         user_list.append({
@@ -151,3 +194,17 @@ def change_email(old_email, new_email):
     users[new_email] = users.pop(old_email)
     save_users(users)
     return True, "Email mis à jour avec succès !"
+
+
+def get_email_by_username(username):
+    """
+    Recherche l'email correspondant à un nom d'utilisateur.
+    Retourne l'email si trouvé, sinon None.
+    """
+    users = load_users()
+    for email, data in users.items():
+        if data.get("username") == username:
+            return email
+    return None
+
+
