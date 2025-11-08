@@ -4,17 +4,8 @@ from PyQt6.QtGui import QFont, QPixmap, QIcon, QColor , QAction
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
-
+from core.integrityCode import build_baseline_for_folder
 from core.config_manager import get_mode , update_mode
-
-
-# --- Remplace par ton import réel pour build_baseline_for_folder ---
-# from core.integrity_monitoring import build_baseline_for_folder
-def build_baseline_for_folder(folder):
-    # Exemple fictif pour test
-    print(f"Baseline built for folder: {folder}")
-
-
 
 
 
@@ -33,6 +24,8 @@ class ScanPage(QWidget):
         # --- Splitter ---
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.main_layout.addWidget(self.splitter)
+        self.labelScan = QLabel()
+        self.main_layout.addWidget(self.labelScan )
 
         # --- Left: Table Widget ---
         self._setup_table_widget()
@@ -78,10 +71,10 @@ class ScanPage(QWidget):
         add_button.setMenu(menu)
         top_bar.addWidget(add_button)
 
-        scan_button = QPushButton("Scan")
+        self.scan_button = QPushButton("Scan")
 
-        scan_button.clicked.connect(self.lance_scan)
-        top_bar.addWidget(scan_button)
+        self.scan_button.clicked.connect(self.lance_scan)
+        top_bar.addWidget(self.scan_button)
         self.mode_button = QPushButton("Live Mode :")
         self.mode_button.setStyleSheet(
             """ QPushButton { background-color: none ;color: gris ; border-radius: 6px; font-size: 14px; font-weight: bold; } """)
@@ -248,6 +241,7 @@ class ScanPage(QWidget):
         if folder:
             self.path_edit.setText(folder)
             build_baseline_for_folder(folder)
+            self.load_json_to_table()
 
         else :
             QMessageBox.warning(self, "Error", "Please select a valid folder.")
@@ -255,14 +249,24 @@ class ScanPage(QWidget):
 
 
     def lance_scan(self):
-        folder = self.path_edit.text().strip()
-        if not folder or not os.path.isdir(folder):
-            QMessageBox.warning(self, "Error", "Please select a valid folder.")
-            return
+
         try:
-            build_baseline_for_folder(folder)
-            self.load_log_details
-            QMessageBox.information(self, "Scan Complete", f"Scan completed for folder:\n{folder}")
+            if self.scan_button.text().strip()=="scan":
+                if get_mode() == "manuel":
+                    self.load_log_details
+                    self.scan_button.setText("Arreter")
+                    # check intergrity
+                    self.labelScan.setText("Strat Scan ....... ")
+                    # label Strat Scan .......
+                    # changer la valeur de button scan
+                else:
+                    QMessageBox.critical(self, "Erreur", f"Scann deja en cours ... pour relence click sur live mode  :\n")
+
+            else :
+                self.scan_button.setText("scan")
+                self.labelScan.setText("Arreter  Scan ....... ")
+
+
         except Exception as error:
             QMessageBox.critical(self, "Erreur", f"Impossible :\n{error}")
 
